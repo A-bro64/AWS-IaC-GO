@@ -1,0 +1,25 @@
+resource "aws_iam_role" "ec2_iam_role" {
+  name               = "team1-ec2_iam_role"
+  path               = "/"
+  assume_role_policy = <<EOF
+{
+  "Version" : "2012-10-17",
+  "Statement" :
+  [
+    {
+      "Effect" : "Allow",
+      "Principal" : {
+        "Service" : ["ssm.amazonaws.com"]
+      },
+      "Action" : "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+resource "aws_iam_instance_profile" "team1-ec2-profile" {
+  name = "ec2_instance_profile123"
+  role = aws_iam_role.ec2_iam_role.name
+}
+
+#Create a instance profile for bastion host to comminucate to web, app servers

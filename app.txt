@@ -1,0 +1,81 @@
+# -= APP =- 
+# Template for App
+resource "aws_launch_configuration" "cloud-app-launch-config" {
+  image_id        = "ami-047a51fa27710816e"
+  instance_type   = "t2.micro"
+  security_groups = [aws_security_group.cloud-app-sg.id]
+  #iam_instance_profile = aws_iam_instance_profile.cloud-ec2-profile.name #it was issue here with sintax
+  user_data = file("/home/ec2-user/Project/project2/data.sh")
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+# Auto Scaling Group for App tier
+resource "aws_autoscaling_group" "cloud_app_asg" {
+  launch_configuration = aws_launch_configuration.cloud-app-launch-config.id
+  vpc_zone_identifier  = [aws_subnet.private1.id, aws_subnet.private2.id]
+  min_size             = 2
+  max_size             = 6
+  desired_capacity     = 4
+  target_group_arns    = [aws_lb_target_group.app_alb_target_group.arn]
+  health_check_type    = "ELB"
+  tag {
+    key                 = "Name"
+    value               = "cloud-app-asg"
+    propagate_at_launch = true
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+#  web application load balancer for public access
+resource "aws_lb" "cloud_app_elb" {
+  name               = "cloud-app-elb"
+  load_balancer_type = "application"
+  internal           = true
+  subnets = [aws_subnet.private1.id,
+  aws_subnet.private2.id]
+  security_groups = [aws_security_group.cloud-app-sg.id]
+  idle_timeout    = 30 #timeout
+  tags = {
+    name = "cloud_app_elb"
+  }
+}
+
+# Application Load balancer listeners will be created
+resource "aws_lb_listener" "app_alb_listener" {
+  load_balancer_arn = aws_lb.cloud_app_elb.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    target_group_arn = aws_lb_target_group.app_alb_target_group.arn
+    type             = "forward"
+  }
+}
+
+### Target Group for ALB 
+resource "aws_lb_target_group" "app_alb_target_group" {
+  name     = "app-alb-target-group"
+  port     = "80"
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.vpc2021.id
+  tags = {
+    name = "alb_target_group"
+  }
+  health_check {
+    healthy_threshold   = 5  # healthy_threshold
+    unhealthy_threshold = 5  # unhealthy_threshold
+    timeout             = 30 # timeout
+    interval            = 60 # interval
+  }
+}
+
+resource "aws_autoscaling_attachment" "cloud_app_asg" {
+  alb_target_group_arn   = aws_lb_target_group.app_alb_target_group.arn
+  autoscaling_group_name = aws_autoscaling_group.cloud_app_asg.id
+}

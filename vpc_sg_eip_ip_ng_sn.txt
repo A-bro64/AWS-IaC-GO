@@ -1,0 +1,191 @@
+# Create Vpc Cloud stars
+resource "aws_vpc" "vpc2021" {
+  cidr_block           = "10.0.0.0/16"
+  enable_dns_hostnames = true
+  enable_dns_support   = true
+
+  tags = {
+    Name = "vpc2021"
+  }
+}
+# IG
+resource "aws_internet_gateway" "Cloud-IG" {
+  vpc_id = aws_vpc.vpc2021.id
+
+  tags = {
+    Name = "Cloud-IG"
+  }
+}
+
+# Eip and Nat-G
+resource "aws_eip" "cloud-eip" {
+  vpc                       = true
+  associate_with_private_ip = "10.0.0.5"
+}
+resource "aws_nat_gateway" "cloud-nat" {
+  allocation_id = aws_eip.cloud-eip.id
+  subnet_id     = aws_subnet.public1.id
+  depends_on    = [aws_eip.cloud-eip]
+
+  tags = {
+    Name = "cloud-NAT"
+  }
+}
+
+# Subnets
+resource "aws_subnet" "public1" {
+  vpc_id                  = aws_vpc.vpc2021.id
+  cidr_block              = "10.0.1.0/24"
+  availability_zone       = "us-east-1a"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "public-sn-1"
+  }
+}
+
+resource "aws_subnet" "public2" {
+  vpc_id                  = aws_vpc.vpc2021.id
+  cidr_block              = "10.0.2.0/24"
+  availability_zone       = "us-east-1b"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "public2"
+  }
+}
+
+resource "aws_subnet" "private1" {
+  vpc_id            = aws_vpc.vpc2021.id
+  cidr_block        = "10.0.3.0/24"
+  availability_zone = "us-east-1a"
+
+  tags = {
+    Name = "private1"
+  }
+}
+
+resource "aws_subnet" "private2" {
+  vpc_id            = aws_vpc.vpc2021.id
+  cidr_block        = "10.0.4.0/24"
+  availability_zone = "us-east-1b"
+
+  tags = {
+    Name = "private2"
+  }
+}
+
+resource "aws_subnet" "private3" {
+  vpc_id            = aws_vpc.vpc2021.id
+  cidr_block        = "10.0.5.0/24"
+  availability_zone = "us-east-1a"
+
+  tags = {
+    Name = "private3"
+  }
+}
+
+
+resource "aws_subnet" "private4" {
+  vpc_id            = aws_vpc.vpc2021.id
+  cidr_block        = "10.0.6.0/24"
+  availability_zone = "us-east-1b"
+
+  tags = {
+    Name = "private4"
+  }
+}
+
+# resource "aws_subnet" "privatesn5" {
+#   vpc_id     = aws_vpc.vpc2021.id
+#   cidr_block = "10.0.7.0/24"
+#   availability_zone = "us-east-1a"
+
+#   tags = {
+#     Name = "private-sn-5"
+#   }
+# }
+
+
+# resource "aws_subnet" "privatesn6" {
+#   vpc_id     = aws_vpc.vpc2021.id
+#   cidr_block = "10.0.8.0/24"
+#   availability_zone = "us-east-1b"
+
+#   tags = {
+#     Name = "private-sn-6"
+#   }
+# }
+
+# public route table
+resource "aws_route_table" "public-rt" {
+  vpc_id = aws_vpc.vpc2021.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.Cloud-IG.id
+  }
+
+  # route {
+  #   ipv6_cidr_block        = "::/0"
+  #   egress_only_gateway_id = aws_egress_only_internet_gateway.foo.id
+  # }
+
+  tags = {
+    Name = "cloud-public-route-table"
+  }
+}
+
+
+#Private Route table
+
+resource "aws_default_route_table" "private-rt" {
+  default_route_table_id = aws_vpc.vpc2021.default_route_table_id
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_nat_gateway.cloud-nat.id
+  }
+  tags = {
+    Name = "cloud-private-route-table"
+  }
+}
+
+#Subnet associations to the route table
+resource "aws_route_table_association" "cloud_public1_assoc" {
+  subnet_id      = aws_subnet.public1.id
+  route_table_id = aws_route_table.public-rt.id
+}
+
+resource "aws_route_table_association" "cloud_public2_assoc" {
+  subnet_id      = aws_subnet.public2.id
+  route_table_id = aws_route_table.public-rt.id
+}
+
+resource "aws_route_table_association" "cloud_private1_assoc" {
+  subnet_id      = aws_subnet.private1.id
+  route_table_id = aws_default_route_table.private-rt.id
+}
+
+resource "aws_route_table_association" "cloud_private2_assoc" {
+  subnet_id      = aws_subnet.private2.id
+  route_table_id = aws_default_route_table.private-rt.id
+}
+resource "aws_route_table_association" "cloud_private3_assoc" {
+  subnet_id      = aws_subnet.private3.id
+  route_table_id = aws_default_route_table.private-rt.id
+}
+
+resource "aws_route_table_association" "cloud_private4_assoc" {
+  subnet_id      = aws_subnet.private4.id
+  route_table_id = aws_default_route_table.private-rt.id
+}
+
+# resource "aws_route_table_association" "cloud_private5_assoc" {
+#   subnet_id      = aws_subnet.privatesn5.id
+#   route_table_id = aws_default_route_table.private-rt.id
+# }
+
+# resource "aws_route_table_association" "cloud_private6_assoc" {
+#   subnet_id      = aws_subnet.privatesn6.id
+#   route_table_id = aws_default_route_table.private-rt.id
+# }

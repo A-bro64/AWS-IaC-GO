@@ -1,0 +1,36 @@
+resource "aws_s3_bucket" "gogreenbystars-cloud-2021" {
+  bucket = "gogreenbystars-cloud-2021"
+  acl    = "private"
+
+  lifecycle_rule {
+    id      = "log"
+    enabled = true
+
+    prefix = "log/"
+
+    tags = {
+      rule      = "log"
+      autoclean = "true"
+    }
+
+
+    transition {
+      days          = 60
+      storage_class = "GLACIER"
+    }
+
+    expiration {
+      days = 365
+    }
+  }
+
+  lifecycle_rule {
+    id      = "tmp"
+    prefix  = "tmp/"
+    enabled = true
+
+    expiration {
+      date = "2022-01-12"
+    }
+  }
+}

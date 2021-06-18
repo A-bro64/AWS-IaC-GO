@@ -1,0 +1,22 @@
+#   Creates hosted zone in RT53
+resource "aws_route53_zone" "cloudstartP" {
+  name = "Cloudstars2021.com"
+}
+
+#   Creates record in hosted zone RT53
+resource "aws_route53_record" "www" {
+  zone_id = aws_route53_zone.cloudstartP.zone_id
+  name    = "www.Cloudstars2021.com"
+  type    = "A"
+  alias {
+    name                   = "dualstack.bastion-host"
+    zone_id                = "us-west-1"
+    evaluate_target_health = true
+
+  }
+}
+
+#   Outputs the 4 DNS servers that route traffic to DNS record
+output "name_server" {
+  value = aws_route53_zone.cloudstartP.name_servers
+}

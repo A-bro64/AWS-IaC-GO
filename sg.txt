@@ -1,0 +1,118 @@
+resource "aws_security_group" "cloud-ec2-sg" {
+  name        = "cloud-ec2-sg"
+  description = "Allow ssh from anywhere inbound traffic"
+  vpc_id      = aws_vpc.vpc2021.id
+
+  ingress {
+    description = "SSH from VPC"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.vpc2021.cidr_block]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "allow_SSH"
+  }
+}
+
+
+##SECURITY GROUP FOR WEB TIER
+
+##create app security group
+
+resource "aws_security_group" "cloud-app-sg" {
+  name        = "allow_http"
+  description = "Allow http inbound traffic"
+  vpc_id      = aws_vpc.vpc2021.id
+
+  ingress {
+    description = "http from VPC"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = [aws_vpc.vpc2021.cidr_block]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "app-allow_http"
+  }
+}
+
+
+##create web security group
+
+resource "aws_security_group" "cloud-web-sg" {
+  name        = "web_allow_http"
+  description = "Allow http inbound traffic"
+  vpc_id      = aws_vpc.vpc2021.id
+
+  ingress {
+    description = "http from everywhere"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "web-allow_http"
+  }
+}
+
+
+##Bastion Security Group 
+
+resource "aws_security_group" "Bastion-Host-Sg" {
+  name        = "allow_http_for_Bastion"
+  description = "Allow http inbound traffic"
+  vpc_id      = aws_vpc.vpc2021.id
+
+  ingress {
+    description = "http from everywhere"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "ssh from everywhere"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "app-allow_http&ssh"
+  }
+}
