@@ -1,2 +1,2 @@
 # Project
-AWS Resourses 
+AWS Resources 
